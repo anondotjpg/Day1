@@ -1,7 +1,7 @@
 // app/components/Chat.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, type Message } from "../lib/supabase";
 
 interface ChatProps {
@@ -19,6 +19,7 @@ const ALLOWED_TYPES = [
   "video/quicktime",
   "video/webm",
 ];
+const MIN_LOADER_DURATION = 800; // minimum ms to show loader for smooth asset loading
 
 export default function Chat({ dayId, username }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,6 +27,7 @@ export default function Chat({ dayId, username }: ChatProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showJumpToPresent, setShowJumpToPresent] = useState(false);
   const [previewMedia, setPreviewMedia] = useState<{
     file: File;
     url: string;
@@ -33,21 +35,43 @@ export default function Chat({ dayId, username }: ChatProps) {
   } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
 
+  // Check if user is near bottom
+  const checkIfNearBottom = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return true;
+    
+    const threshold = 150; // pixels from bottom
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return distanceFromBottom < threshold;
+  }, []);
+
+  // Handle scroll to detect if we should show "jump to present"
+  const handleScroll = useCallback(() => {
+    const isNearBottom = checkIfNearBottom();
+    setShowJumpToPresent(!isNearBottom);
+  }, [checkIfNearBottom]);
+
+  // Auto-scroll on new messages only if near bottom
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (checkIfNearBottom()) {
+      scrollToBottom();
+    }
+  }, [messages, checkIfNearBottom, scrollToBottom]);
 
-  // Fetch initial messages
+  // Fetch initial messages with minimum loader duration
   useEffect(() => {
     const fetchMessages = async () => {
+      const startTime = Date.now();
+      
       const { data, error } = await supabase
         .from("messages")
         .select("*")
@@ -60,11 +84,22 @@ export default function Chat({ dayId, username }: ChatProps) {
       } else {
         setMessages(data || []);
       }
+
+      // Ensure minimum loader duration for smooth asset loading
+      const elapsed = Date.now() - startTime;
+      const remaining = MIN_LOADER_DURATION - elapsed;
+      
+      if (remaining > 0) {
+        await new Promise(resolve => setTimeout(resolve, remaining));
+      }
+      
       setIsLoading(false);
+      // Scroll to bottom after initial load
+      setTimeout(() => scrollToBottom("instant"), 50);
     };
 
     fetchMessages();
-  }, [dayId]);
+  }, [dayId, scrollToBottom]);
 
   // Subscribe to realtime updates
   useEffect(() => {
@@ -217,9 +252,13 @@ export default function Chat({ dayId, username }: ChatProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-none">
+    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full relative">
+      {/* Messages - scrollable area */}
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-none"
+      >
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center h-full min-h-[200px]">
             <p className="text-white/30 text-[15px]">No messages yet</p>
@@ -299,137 +338,174 @@ export default function Chat({ dayId, username }: ChatProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Media Preview */}
-      {previewMedia && (
-        <div className="relative mb-3 inline-block">
-          <div className="relative rounded-xl overflow-hidden bg-[#1c1c1e] inline-block">
-            {previewMedia.type === "video" ? (
-              <video
-                src={previewMedia.url}
-                className="max-h-[200px] max-w-[300px] object-contain"
-              />
-            ) : (
-              <img
-                src={previewMedia.url}
-                alt="Preview"
-                className="max-h-[200px] max-w-[300px] object-contain"
-              />
-            )}
-            {/* Remove button */}
-            <button
-              onClick={clearPreview}
-              className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors"
-            >
-              <svg
-                className="w-3 h-3 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-
-          {/* Upload progress */}
-          {isUploading && (
-            <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
+      {/* Jump to Present Button */}
+      {showJumpToPresent && (
+        <button
+          onClick={() => scrollToBottom()}
+          className="
+            absolute bottom-24 left-1/2 -translate-x-1/2
+            px-4 py-2 rounded-full
+            bg-[#1c1c1e]/90 backdrop-blur-sm
+            border border-white/10
+            text-white/80 text-[13px] font-medium
+            shadow-lg
+            hover:bg-[#2c2c2e] hover:text-white
+            transition-all duration-200
+            flex items-center gap-2
+            z-10
+          "
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3"
+            />
+          </svg>
+          Jump to present
+        </button>
       )}
 
-      {/* Input */}
-      <form onSubmit={sendMessage} className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Message"
-          disabled={isSending || isUploading}
-          className="
-            w-full pl-12 pr-12 py-3
-            bg-[#1c1c1e] text-white text-[15px]
-            placeholder:text-white/30
-            rounded-full border border-white/10
-            outline-none
-            focus:border-white/20
-            transition-colors
-            disabled:opacity-50
-          "
-        />
+      {/* Pinned Input Area - content scrolls under this */}
+      <div className="sticky bottom-0 pt-2 bg-gradient-to-t from-black via-black to-transparent">
+        {/* Media Preview */}
+        {previewMedia && (
+          <div className="relative mb-3 inline-block">
+            <div className="relative rounded-xl overflow-hidden bg-[#1c1c1e] inline-block">
+              {previewMedia.type === "video" ? (
+                <video
+                  src={previewMedia.url}
+                  className="max-h-[200px] max-w-[300px] object-contain"
+                />
+              ) : (
+                <img
+                  src={previewMedia.url}
+                  alt="Preview"
+                  className="max-h-[200px] max-w-[300px] object-contain"
+                />
+              )}
+              {/* Remove button */}
+              <button
+                onClick={clearPreview}
+                className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center hover:bg-black/80 transition-colors"
+              >
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
 
-        {/* Media button */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isSending || isUploading}
-          className="
-            absolute left-2 top-1/2 -translate-y-1/2
-            w-8 h-8 flex items-center justify-center
-            rounded-full text-white/40 hover:text-white/60
-            disabled:opacity-50
-            transition-colors
-          "
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
+            {/* Upload progress */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Input */}
+        <form onSubmit={sendMessage} className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Message"
+            disabled={isSending || isUploading}
+            className="
+              w-full pl-12 pr-12 py-3
+              bg-[#1c1c1e] text-white text-[15px]
+              placeholder:text-white/30
+              rounded-full border border-white/10
+              outline-none
+              focus:border-white/20
+              transition-colors
+              disabled:opacity-50
+            "
+          />
+
+          {/* Media button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending || isUploading}
+            className="
+              absolute left-2 top-1/2 -translate-y-1/2
+              w-8 h-8 flex items-center justify-center
+              rounded-full text-white/40 hover:text-white/60
+              disabled:opacity-50
+              transition-colors
+            "
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+              />
+            </svg>
+          </button>
 
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
 
-        {/* Send button */}
-        <button
-          type="submit"
-          disabled={(!input.trim() && !previewMedia) || isSending || isUploading}
-          className="
-            absolute right-2 top-1/2 -translate-y-1/2
-            w-8 h-8 flex items-center justify-center
-            rounded-full bg-[#0A84FF]
-            disabled:opacity-30 disabled:bg-white/10
-            transition-opacity
-          "
-        >
-          <svg
-            className="w-4 h-4 text-white"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
+          {/* Send button */}
+          <button
+            type="submit"
+            disabled={(!input.trim() && !previewMedia) || isSending || isUploading}
+            className="
+              absolute right-2 top-1/2 -translate-y-1/2
+              w-8 h-8 flex items-center justify-center
+              rounded-full bg-[#0A84FF]
+              disabled:opacity-30 disabled:bg-white/10
+              transition-opacity
+            "
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"
-            />
-          </svg>
-        </button>
-      </form>
+            <svg
+              className="w-4 h-4 text-white"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18"
+              />
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
