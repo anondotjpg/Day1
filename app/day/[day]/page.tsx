@@ -2,8 +2,8 @@
 
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import ConnectXButton from "@/components/ConnectXButton";
-import XProfile from "@/components/XProfile";
+import ConnectXButton from "@/app/components/ConnectXButton";
+import XProfile from "@/app/components/XProfile";
 
 export default async function DayPage({
   params,
