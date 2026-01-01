@@ -11,13 +11,14 @@ export function YearGrid({ dayOfYear }: { dayOfYear: number }) {
         const isToday = day === dayOfYear;
         const isPast = day < dayOfYear;
         const isFuture = day > dayOfYear;
+        const Day1 = day + 1;
 
         return (
           <button
             key={day}
             onClick={() => {
               if (!isFuture) {
-                router.push(`/day/${day + 1}`);
+                router.push(`/day/${Day1}`);
               }
             }}
             disabled={isFuture}
