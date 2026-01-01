@@ -7,18 +7,18 @@ export function YearGrid({ dayOfYear }: { dayOfYear: number }) {
 
   return (
     <div className="grid grid-cols-[repeat(14,1fr)] sm:grid-cols-[repeat(16,1fr)] md:grid-cols-[repeat(20,1fr)] lg:grid-cols-[repeat(24,1fr)] gap-0.5 sm:gap-0.75 w-full max-w-3xl mt-20 p-5 md:p-0 md:mt-0 lg:mt-0">
-      {Array.from({ length: 365 }).map((_, day) => {
-        const isToday = day === dayOfYear;
-        const isPast = day < dayOfYear;
-        const isFuture = day > dayOfYear;
-        const Day1 = day + 1;
+      {Array.from({ length: 365 }).map((_, dayy) => {
+        const isToday = dayy === dayOfYear;
+        const isPast = dayy < dayOfYear;
+        const isFuture = dayy > dayOfYear;
+        const day = dayy + 1;
 
         return (
           <button
-            key={day}
+            key={dayy}
             onClick={() => {
               if (!isFuture) {
-                router.push(`/day/${Day1}`);
+                router.push(`/day/${day}`);
               }
             }}
             disabled={isFuture}

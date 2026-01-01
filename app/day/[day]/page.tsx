@@ -8,10 +8,10 @@ import XProfile from "@/app/components/XProfile";
 export default async function DayPage({
   params,
 }: {
-  params: Promise<{ Day1: string }>;
+  params: Promise<{ day: string }>;
 }) {
-  const { Day1 } = await params;
-  const dayNumber = Number(Day1);
+  const { day } = await params;
+  const dayNumber = Number(day);
 
   if (!Number.isInteger(dayNumber) || dayNumber < 0 || dayNumber > 364) {
     notFound();
