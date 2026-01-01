@@ -1,7 +1,7 @@
 // app/components/Chat.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { supabase, type Message } from "../lib/supabase";
 
 interface ChatProps {
@@ -25,6 +25,7 @@ export default function Chat({ dayId, username }: ChatProps) {
   const [input, setInput] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewMedia, setPreviewMedia] = useState<{
@@ -47,11 +48,25 @@ export default function Chat({ dayId, username }: ChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // After messages load, wait for layout then show
+  useLayoutEffect(() => {
+    if (isMounted && !isLoading && messages.length >= 0) {
+      // Force a layout calculation before showing
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      // Use double RAF to ensure paint is complete
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsVisible(true);
+        });
+      });
+    }
+  }, [isMounted, isLoading, messages.length]);
+
   useEffect(() => {
-    if (isMounted && !isLoading) {
+    if (isVisible) {
       scrollToBottom();
     }
-  }, [messages, isMounted, isLoading]);
+  }, [messages, isVisible]);
 
   // Fetch initial messages only after mounted
   useEffect(() => {
@@ -228,21 +243,15 @@ export default function Chat({ dayId, username }: ChatProps) {
       </div>
     );
   }
-  // Add this right before the return statement, after the loading check
-    console.log('Username prop:', username);
-    console.log('Message usernames:', messages.map(m => m.username));
-    console.log('Comparisons:', messages.map(m => ({ 
-    messageUser: m.username, 
-    propUser: username, 
-    isOwn: m.username === username,
-    strictEqual: m.username === username,
-    types: [typeof m.username, typeof username]
-    })));
 
   return (
     <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-none">
+      {/* Messages - hidden until layout is complete */}
+      <div 
+        className={`flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-none transition-opacity duration-150 ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center h-full min-h-[200px]">
             <p className="text-white/30 text-[15px]">No messages yet</p>
@@ -321,6 +330,13 @@ export default function Chat({ dayId, username }: ChatProps) {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Show spinner overlay while positioning */}
+      {!isVisible && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#0b0b0d]">
+          <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+        </div>
+      )}
 
       {/* Media Preview */}
       {previewMedia && (
