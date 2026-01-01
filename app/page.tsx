@@ -1,65 +1,71 @@
-import Image from "next/image";
+"use client";
+
+import { useRef, useState, useEffect } from "react";
+import { LockInModal } from "./components/LockInModal";
+import { MiniPlayer } from "./components/MiniPlayer";
+import { YearGrid } from "./components/YearGrid";
+import { FocusQuoteLoop } from "./components/FocusQuoteLoop";
+import { WalletBalancePill } from "./components/WalletBalancePill";
 
 export default function Home() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [lockedIn, setLockedIn] = useState(false);
+
+  // Determine current day of the year
+  const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000) - 1;
+
+  const startAudio = async () => {
+    if (audioRef.current) {
+      await audioRef.current.play();
+      setPlaying(true);
+      setLockedIn(true);
+    }
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current || !lockedIn) return;
+    playing ? audioRef.current.pause() : audioRef.current.play();
+    setPlaying(!playing);
+  };
+
+  const seek = (delta: number) => {
+    if (audioRef.current && lockedIn) audioRef.current.currentTime += delta;
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const update = () => setProgress((audio.currentTime / audio.duration) * 100 || 0);
+    audio.addEventListener("timeupdate", update);
+    return () => audio.removeEventListener("timeupdate", update);
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="relative min-h-screen bg-[#0b0b0d] px-4 py-8 flex flex-col items-center justify-center">
+      <WalletBalancePill walletAddress="2i5RNHQFmiEWFqwvmRsGK6iaV6YqiW3WqzJkArRinXiQ" />
+
+      {!lockedIn && <LockInModal onConfirm={startAudio} />}
+      
+      <MiniPlayer 
+        audioRef={audioRef} 
+        playing={playing} 
+        progress={progress} 
+        lockedIn={lockedIn} 
+        togglePlay={togglePlay} 
+        seek={seek} 
+      />
+
+      <h1 className="text-xl sm:text-2xl lg:text-5xl font-light text-zinc-500 mb-6 tracking-wide hidden">
+        2026
+      </h1>
+
+      <div className="absolute bottom-10 w-80 hidden">
+        <FocusQuoteLoop />
+      </div>
+
+      <YearGrid dayOfYear={dayOfYear} />
     </div>
   );
 }
