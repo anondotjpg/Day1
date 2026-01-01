@@ -44,11 +44,11 @@ export default async function DayPage({
       </header>
 
       {/* ─────────────── Chat Area ─────────────── */}
-      <div className="min-h-screen flex flex-col pt-[10%] pb-6 px-4 md:px-[12%]">
+      <div className="min-h-screen flex flex-col pt-[25%] md:pt-[10%] pb-6 px-4 md:px-[12%]">
         {isSignedIn ? (
           <Chat dayId={dayNumber} username={xUsername} />
         ) : (
-          <div className="flex-1 flex items-center justify-center mt-[-10%]">
+          <div className="flex-1 flex items-center justify-center mt-[-25%] md:mt-[-10%]">
             <p className="text-white/40 text-[15px]">
               Sign in with X to join the chat
             </p>
