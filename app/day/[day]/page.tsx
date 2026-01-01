@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import ConnectXButton from "@/app/components/ConnectXButton";
 import XProfile from "@/app/components/XProfile";
+import Chat from "@/app/components/Chat";
 
 export default async function DayPage({
   params,
@@ -21,6 +22,8 @@ export default async function DayPage({
   const xAccessToken = cookieStore.get("x_access_token")?.value;
   const xUsername = cookieStore.get("x_username")?.value;
 
+  const isSignedIn = !!(xAccessToken && xUsername);
+
   return (
     <main className="relative min-h-screen bg-[#0b0b0d] text-white">
       {/* ───────────────── Header ───────────────── */}
@@ -32,7 +35,7 @@ export default async function DayPage({
 
         {/* X connect / profile — top right */}
         <div>
-          {xAccessToken && xUsername ? (
+          {isSignedIn ? (
             <XProfile username={xUsername} />
           ) : (
             <ConnectXButton />
@@ -40,10 +43,17 @@ export default async function DayPage({
         </div>
       </header>
 
-      {/* ─────────────── Center (empty / future) ─────────────── */}
-      <div className="min-h-screen flex items-center justify-center">
-        {/* Intentionally minimal.
-            This is where future content can live. */}
+      {/* ─────────────── Chat Area ─────────────── */}
+      <div className="min-h-screen flex flex-col pt-24 pb-6 px-4 md:px-[12%]">
+        {isSignedIn ? (
+          <Chat dayId={dayNumber} username={xUsername} />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-white/40 text-[15px]">
+              Sign in with X to join the chat
+            </p>
+          </div>
+        )}
       </div>
     </main>
   );
