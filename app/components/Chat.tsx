@@ -24,6 +24,7 @@ export default function Chat({ dayId, username }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewMedia, setPreviewMedia] = useState<{
@@ -42,8 +43,10 @@ export default function Chat({ dayId, username }: ChatProps) {
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (isReady) {
+      scrollToBottom();
+    }
+  }, [messages, isReady]);
 
   // Fetch initial messages
   useEffect(() => {
@@ -61,6 +64,10 @@ export default function Chat({ dayId, username }: ChatProps) {
         setMessages(data || []);
       }
       setIsLoading(false);
+      // Small delay to ensure ownership is calculated before showing
+      requestAnimationFrame(() => {
+        setIsReady(true);
+      });
     };
 
     fetchMessages();
@@ -208,7 +215,8 @@ export default function Chat({ dayId, username }: ChatProps) {
     });
   };
 
-  if (isLoading) {
+  // Show loading until both data is loaded AND ready to render with correct ownership
+  if (isLoading || !isReady) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
