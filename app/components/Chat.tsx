@@ -23,8 +23,8 @@ const ALLOWED_TYPES = [
 export default function Chat({ dayId, username }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [previewMedia, setPreviewMedia] = useState<{
@@ -37,19 +37,26 @@ export default function Chat({ dayId, username }: ChatProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Wait for hydration to complete
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Scroll to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    if (isReady) {
+    if (isMounted && !isLoading) {
       scrollToBottom();
     }
-  }, [messages, isReady]);
+  }, [messages, isMounted, isLoading]);
 
-  // Fetch initial messages
+  // Fetch initial messages only after mounted
   useEffect(() => {
+    if (!isMounted) return;
+
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from("messages")
@@ -64,17 +71,15 @@ export default function Chat({ dayId, username }: ChatProps) {
         setMessages(data || []);
       }
       setIsLoading(false);
-      // Small delay to ensure ownership is calculated before showing
-      requestAnimationFrame(() => {
-        setIsReady(true);
-      });
     };
 
     fetchMessages();
-  }, [dayId]);
+  }, [dayId, isMounted]);
 
   // Subscribe to realtime updates
   useEffect(() => {
+    if (!isMounted) return;
+
     const channel = supabase
       .channel(`chat:day:${dayId}`)
       .on(
@@ -98,7 +103,7 @@ export default function Chat({ dayId, username }: ChatProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [dayId]);
+  }, [dayId, isMounted]);
 
   // Handle file selection
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -215,8 +220,8 @@ export default function Chat({ dayId, username }: ChatProps) {
     });
   };
 
-  // Show loading until both data is loaded AND ready to render with correct ownership
-  if (isLoading || !isReady) {
+  // Show loading until mounted AND messages loaded
+  if (!isMounted || isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
