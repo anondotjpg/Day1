@@ -217,7 +217,7 @@ export default function Chat({ dayId, username }: ChatProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full">
+    <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-4 scrollbar-none">
         {messages.length === 0 ? (
