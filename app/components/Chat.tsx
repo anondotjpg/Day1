@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { supabase, type Message } from "../lib/supabase";
+import { supabase, type Message } from "@/lib/supabase";
 
 interface ChatProps {
   dayId: number;
@@ -248,11 +248,12 @@ export default function Chat({ dayId, username }: ChatProps) {
                 <div
                   className={`
                     max-w-[85%] rounded-2xl overflow-hidden
-                    ${isOwn
-                      ? "bg-[#0A84FF] text-white rounded-br-md"
-                      : "bg-[#1c1c1e] text-white/90 rounded-bl-md"
+                    ${message.media_url && !message.content
+                      ? "" 
+                      : isOwn
+                        ? "bg-[#0A84FF] text-white rounded-br-md px-4 py-2.5"
+                        : "bg-[#1c1c1e] text-white/90 rounded-bl-md px-4 py-2.5"
                     }
-                    ${message.media_url && !message.content ? "" : "px-4 py-2.5"}
                   `}
                 >
                   {/* Media */}
@@ -278,7 +279,15 @@ export default function Chat({ dayId, username }: ChatProps) {
 
                   {/* Text */}
                   {message.content && (
-                    <p className={`text-[15px] leading-relaxed ${message.media_url ? "px-4 pb-2.5" : ""}`}>
+                    <p
+                      className={`
+                        text-[15px] leading-relaxed
+                        ${message.media_url
+                          ? `mt-2 px-4 py-2.5 rounded-2xl ${isOwn ? "bg-[#0A84FF] text-white rounded-br-md" : "bg-[#1c1c1e] text-white/90 rounded-bl-md"}`
+                          : ""
+                        }
+                      `}
+                    >
                       {message.content}
                     </p>
                   )}
