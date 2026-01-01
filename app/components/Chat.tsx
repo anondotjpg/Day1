@@ -228,6 +228,16 @@ export default function Chat({ dayId, username }: ChatProps) {
       </div>
     );
   }
+  // Add this right before the return statement, after the loading check
+    console.log('Username prop:', username);
+    console.log('Message usernames:', messages.map(m => m.username));
+    console.log('Comparisons:', messages.map(m => ({ 
+    messageUser: m.username, 
+    propUser: username, 
+    isOwn: m.username === username,
+    strictEqual: m.username === username,
+    types: [typeof m.username, typeof username]
+    })));
 
   return (
     <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
