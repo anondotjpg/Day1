@@ -11,6 +11,8 @@ export type Message = {
   id: string;
   day_id: number;
   username: string;
-  content: string;
+  content: string | null;
+  media_url: string | null;
+  media_type: "image" | "video" | null;
   created_at: string;
 };
