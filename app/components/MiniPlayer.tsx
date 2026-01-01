@@ -10,7 +10,7 @@ export function MiniPlayer({ audioRef, playing, progress, lockedIn, togglePlay, 
           <button onClick={() => seek(10)} className="cursor-pointer hover:text-white">⏭</button>
         </div>
       </div>
-      <audio ref={audioRef} src="/audio.mp3" preload="metadata" loop />
+      <audio ref={audioRef} src="https://dn710004.ca.archive.org/0/items/M83_2023-04-10/2023-04-10%20Van%20Buren%2C%20Phoenix%2C%20Arizona/13%20-%20Solitude.mp3" preload="metadata" loop />
     </div>
   );
 }
