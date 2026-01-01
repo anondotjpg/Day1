@@ -1,6 +1,6 @@
 // app/api/auth/x/route.ts
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 // X OAuth 2.0 with PKCE
@@ -34,7 +34,7 @@ function generateState(): string {
   return base64URLEncode(array);
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const clientId = process.env.X_CLIENT_ID;
   const redirectUri = process.env.X_REDIRECT_URI;
 
@@ -44,6 +44,9 @@ export async function GET() {
       { status: 500 }
     );
   }
+
+  // Get the return path from query params
+  const returnTo = request.nextUrl.searchParams.get("returnTo") || "/day/0";
 
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -59,6 +62,13 @@ export async function GET() {
     path: "/",
   });
   cookieStore.set("x_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10, // 10 minutes
+    path: "/",
+  });
+  cookieStore.set("x_return_to", returnTo, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

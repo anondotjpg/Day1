@@ -12,26 +12,28 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const storedState = cookieStore.get("x_oauth_state")?.value;
   const codeVerifier = cookieStore.get("x_code_verifier")?.value;
+  const returnTo = cookieStore.get("x_return_to")?.value || "/day/0";
 
   // Clear the temporary cookies
   cookieStore.delete("x_oauth_state");
   cookieStore.delete("x_code_verifier");
+  cookieStore.delete("x_return_to");
 
   // Handle errors from X
   if (error) {
     console.error("X OAuth error:", error);
-    return NextResponse.redirect(new URL("/day/0?error=auth_denied", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?error=auth_denied`, request.url));
   }
 
   // Validate state to prevent CSRF
   if (!state || state !== storedState) {
     console.error("State mismatch");
-    return NextResponse.redirect(new URL("/day/0?error=invalid_state", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?error=invalid_state`, request.url));
   }
 
   if (!code || !codeVerifier) {
     console.error("Missing code or verifier");
-    return NextResponse.redirect(new URL("/day/0?error=missing_params", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?error=missing_params`, request.url));
   }
 
   const clientId = process.env.X_CLIENT_ID;
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
 
   if (!clientId || !clientSecret || !redirectUri) {
     console.error("Missing X OAuth configuration");
-    return NextResponse.redirect(new URL("/day/0?error=config_error", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?error=config_error`, request.url));
   }
 
   try {
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error("Token exchange failed:", errorData);
-      return NextResponse.redirect(new URL("/day/0?error=token_exchange", request.url));
+      return NextResponse.redirect(new URL(`${returnTo}?error=token_exchange`, request.url));
     }
 
     const tokens = await tokenResponse.json();
@@ -77,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     if (!userResponse.ok) {
       console.error("Failed to fetch user info");
-      return NextResponse.redirect(new URL("/day/0?error=user_fetch", request.url));
+      return NextResponse.redirect(new URL(`${returnTo}?error=user_fetch`, request.url));
     }
 
     const userData = await userResponse.json();
@@ -112,9 +114,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Redirect back to the app
-    return NextResponse.redirect(new URL("/day/0?connected=true", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?connected=true`, request.url));
   } catch (error) {
     console.error("OAuth callback error:", error);
-    return NextResponse.redirect(new URL("/day/0?error=unknown", request.url));
+    return NextResponse.redirect(new URL(`${returnTo}?error=unknown`, request.url));
   }
 }

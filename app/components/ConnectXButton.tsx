@@ -2,14 +2,16 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function ConnectXButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const pathname = usePathname();
 
   const handleConnect = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/x");
+      const response = await fetch(`/api/auth/x?returnTo=${encodeURIComponent(pathname)}`);
       const data = await response.json();
       
       if (data.url) {
