@@ -11,7 +11,7 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [lockedIn, setLockedIn] = useState(false);
+  const [lockedIn, setLockedIn] = useState(true);
 
   const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000) - 1;
 
