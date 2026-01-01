@@ -50,7 +50,7 @@ export default async function DayPage({
         ) : (
           <div className="flex-1 flex items-center justify-center mt-[-30%] md:mt-[-15%]">
             <p className="text-white/40 text-[15px]">
-              Sign in with X to join the chat
+              Sign in with X to lock in
             </p>
           </div>
         )}
