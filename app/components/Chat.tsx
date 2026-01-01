@@ -9,7 +9,7 @@ interface ChatProps {
   username: string;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
