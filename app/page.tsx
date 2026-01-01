@@ -77,6 +77,8 @@ export default function Home() {
           transition
           hover:scale-[1.04]
           active:scale-[0.98]
+          hidden
+          md:block
         "
       >
         <img
