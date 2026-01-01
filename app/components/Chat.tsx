@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { supabase, type Message } from "@/lib/supabase";
+import { supabase, type Message } from "../lib/supabase";
 
 interface ChatProps {
   dayId: number;
