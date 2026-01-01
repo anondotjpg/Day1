@@ -64,6 +64,28 @@ export default function Home() {
         <FocusQuoteLoop />
       </div>
 
+      <a
+        href="https://pump.fun/board"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="
+          fixed
+          bottom-5
+          left-5
+          z-40
+          overflow-hidden
+          transition
+          hover:scale-[1.04]
+          active:scale-[0.98]
+        "
+      >
+        <img
+          src="/pill.png"
+          alt="Pump.fun"
+          className="h-10 w-10 object-contain"
+        />
+      </a>
+
       <YearGrid dayOfYear={dayOfYear} />
     </div>
   );
