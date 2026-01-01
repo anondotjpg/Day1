@@ -22,17 +22,28 @@ export default async function DayPage({
   const xUsername = cookieStore.get("x_username")?.value;
 
   return (
-    <main className="min-h-screen bg-[#0b0b0d] text-white flex items-center justify-center">
-      <div className="text-center space-y-2">
-        <div className="text-6xl font-light">{dayNumber}</div>
-        
-        <div className="pt-2">
+    <main className="relative min-h-screen bg-[#0b0b0d] text-white">
+      {/* ───────────────── Header ───────────────── */}
+      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-8 md:px-[12%] pt-6">
+        {/* Day number — top left */}
+        <div className="text-[15px] md:text-[32px] font-semibold tracking-tight text-white/90">
+          Day {dayNumber}
+        </div>
+
+        {/* X connect / profile — top right */}
+        <div>
           {xAccessToken && xUsername ? (
             <XProfile username={xUsername} />
           ) : (
             <ConnectXButton />
           )}
         </div>
+      </header>
+
+      {/* ─────────────── Center (empty / future) ─────────────── */}
+      <div className="min-h-screen flex items-center justify-center">
+        {/* Intentionally minimal.
+            This is where future content can live. */}
       </div>
     </main>
   );
