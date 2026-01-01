@@ -23,10 +23,10 @@ export default async function DayPage({
 
   return (
     <main className="min-h-screen bg-[#0b0b0d] text-white flex items-center justify-center">
-      <div className="text-center space-y-6">
+      <div className="text-center space-y-2">
         <div className="text-6xl font-light">{dayNumber}</div>
         
-        <div className="pt-8">
+        <div className="pt-2">
           {xAccessToken && xUsername ? (
             <XProfile username={xUsername} />
           ) : (
