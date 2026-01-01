@@ -13,7 +13,6 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [lockedIn, setLockedIn] = useState(false);
 
-  // Determine current day of the year
   const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000) - 1;
 
   const startAudio = async () => {
