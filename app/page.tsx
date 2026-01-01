@@ -43,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-[#0b0b0d] px-4 py-8 flex flex-col items-center justify-center">
-      <WalletBalancePill walletAddress="2i5RNHQFmiEWFqwvmRsGK6iaV6YqiW3WqzJkArRinXiQ" />
+      <WalletBalancePill walletAddress="7aESFTWMbVKaab6tcihQfJRRXCyay2erofKevaAvxDxK" />
 
       {!lockedIn && <LockInModal onConfirm={startAudio} />}
       
@@ -65,7 +65,7 @@ export default function Home() {
       </div>
 
       <a
-        href="https://pump.fun/board"
+        href="https://pump.fun/coin/Fv2itWJ3TbzXKWmongTx98f273s5XsHuodBv8qQZpump"
         target="_blank"
         rel="noopener noreferrer"
         className="
